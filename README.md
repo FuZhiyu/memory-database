@@ -2,6 +2,8 @@
 
 **A personal communication indexer and search system with MCP (Model Context Protocol) integration**
 
+It's a vibe-coded project for personal use. Many features can be buggy.
+
 Memory Database unifies your communication history across email, iMessage, and contacts into a searchable, people-centric database. It provides an MCP server that enables AI assistants like Claude to search your communications, find contacts, and access your photo library.
 
 ## Features
