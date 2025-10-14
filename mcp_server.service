@@ -1,0 +1,26 @@
+[Unit]
+Description=Memory Database MCP Server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=zhiyufu
+Group=staff
+WorkingDirectory=/Users/zhiyufu/Dropbox/Juju/modules/memory-database
+Environment="PATH=/Users/zhiyufu/Dropbox/Juju/modules/memory-database/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+ExecStart=/Users/zhiyufu/Dropbox/Juju/modules/memory-database/.venv/bin/python run_mcp_server.py --host 0.0.0.0 --port 8765 --transport sse
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Ensure database and environment are available
+Environment="POSTGRES_HOST=localhost"
+Environment="POSTGRES_PORT=5432"
+Environment="POSTGRES_DB=memories_rag"
+Environment="POSTGRES_USER=zhiyufu"
+Environment="LOG_LEVEL=INFO"
+
+[Install]
+WantedBy=multi-user.target

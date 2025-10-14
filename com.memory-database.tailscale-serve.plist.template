@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.memory-database.tailscale-serve</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Applications/Tailscale.app/Contents/MacOS/Tailscale</string>
+        <string>serve</string>
+        <string>--bg</string>
+        <string>--https</string>
+        <string>443</string>
+        <string>--set-path</string>
+        <string>/memory-database</string>
+        <string>http://127.0.0.1:8766</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USERNAME</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/PATH/TO/logs/memory-database/memory-database.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/PATH/TO/logs/memory-database/memory-database.error.log</string>
+
+    <key>UserName</key>
+    <string>YOUR_USERNAME</string>
+
+    <!-- Start after MCP server -->
+    <key>StartInterval</key>
+    <integer>30</integer>
+
+    <!-- Only run once -->
+    <key>LaunchOnlyOnce</key>
+    <true/>
+</dict>
+</plist>
