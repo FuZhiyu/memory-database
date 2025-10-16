@@ -317,3 +317,44 @@ def test_view_photos_returns_empty_on_error(monkeypatch):
 
     result = mod.view_photos(uuids=["test-uuid"])
     assert result == []
+
+
+def test_photos_search_single_day_inclusive_end_date(monkeypatch):
+    """A single-day search (date_from == date_to as YYYY-MM-DD) should include the whole day."""
+    import datetime as dt
+
+    mod = import_photos_tools(monkeypatch)
+
+    class CapturingPhotosDB(FakePhotosDB):
+        def __init__(self):
+            super().__init__(photos_list=[])
+            self.last_kwargs = None
+
+        def photos(self, **kwargs):
+            self.last_kwargs = dict(kwargs)
+            return []
+
+    fake_db = CapturingPhotosDB()
+    monkeypatch.setattr(mod, "PHOTOS_AVAILABLE", True, raising=False)
+    monkeypatch.setattr(mod, "PhotosDB", lambda: fake_db, raising=False)
+
+    # Execute a single-day search
+    _ = mod.photos_search(date_from="2025-08-23", date_to="2025-08-23", limit=10)
+
+    # Verify the photos() call received the correct inclusive day bounds
+    assert fake_db.last_kwargs is not None
+    assert "from_date" in fake_db.last_kwargs
+    assert "to_date" in fake_db.last_kwargs
+
+    from_dt = fake_db.last_kwargs["from_date"]
+    to_dt = fake_db.last_kwargs["to_date"]
+
+    assert isinstance(from_dt, dt.datetime)
+    assert isinstance(to_dt, dt.datetime)
+
+    # Start at beginning of day, end at end of day
+    assert from_dt.date() == dt.date(2025, 8, 23)
+    assert from_dt.time() == dt.time.min
+
+    assert to_dt.date() == dt.date(2025, 8, 23)
+    assert to_dt.time() == dt.time.max

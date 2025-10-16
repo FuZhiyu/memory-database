@@ -48,19 +48,22 @@ except Exception as e:  # pragma: no cover - environment-dependent
 
 # -------- Helpers ---------
 
-def _parse_date(date_str: Optional[str]) -> Optional[_dt.datetime]:
+def _parse_date(date_str: Optional[str], *, is_end: bool = False) -> Optional[_dt.datetime]:
     if not date_str:
         return None
     # Accept date or datetime; assume local timezone for date-only
+    # Try parsing as date first (YYYY-MM-DD) to properly handle is_end flag
     try:
-        # Try full ISO first
+        d = _dt.date.fromisoformat(date_str)
+        # For end boundaries given as a date without time, include the full day
+        return _dt.datetime.combine(d, _dt.time.max if is_end else _dt.time.min)
+    except Exception:
+        pass
+    # Try parsing as full datetime (with time component)
+    try:
         return _dt.datetime.fromisoformat(date_str)
     except Exception:
-        try:
-            d = _dt.date.fromisoformat(date_str)
-            return _dt.datetime.combine(d, _dt.time.min)
-        except Exception:
-            raise ValueError(f"Invalid date format: {date_str}; use YYYY-MM-DD or ISO 8601")
+        raise ValueError(f"Invalid date format: {date_str}; use YYYY-MM-DD or ISO 8601")
 
 
 def _safe_photo_fields(p: "PhotoInfo") -> Dict[str, Any]:
@@ -203,14 +206,13 @@ def photos_search(
     database to resolve people by name, email, or phone number.
 
     **RECOMMENDED WORKFLOW:**
-    1. For people-based searches, use search_person() first to get the person_id
-    2. Then use photos_search with person={"id": "..."} for accurate results
-    3. Or pass person={"email": "..."} / {"phone": "..."} directly for convenience
-    4. Use view_photos() after getting UUIDs to display photos inline
+    1. Use photos_search() with person parameter - resolution happens automatically
+    2. Pass person={"name": "..."} or {"email": "..."} or {"phone": "..."}
+    3. Use view_photos() after getting UUIDs to display photos inline
 
     **Common usage patterns:**
     - User: "Show me photos of Sarah from last year"
-      → search_person(name="Sarah") → photos_search(person={"id": "..."}, date_from="2024-01-01", date_to="2024-12-31")
+      → photos_search(person={"name": "Sarah"}, date_from="2024-01-01", date_to="2024-12-31")
     - User: "Find photos from my Paris trip"
       → photos_search(place="Paris", date_from="2024-06-01", date_to="2024-06-30")
     - User: "Photos of my cat in the Pets album"
@@ -235,7 +237,11 @@ def photos_search(
 
     Location & Time:
     - place: Location name (e.g., "San Francisco", "Golden Gate Park")
-    - date_from/date_to: ISO date strings (e.g., "2024-01-01" or "2024-01-01T10:00:00")
+    - date_from/date_to: ISO date strings (e.g., "2024-01-01" or "2024-01-01T10:00:00").
+      If you pass date-only strings:
+        - date_from uses start-of-day (00:00:00, local time)
+        - date_to uses end-of-day (23:59:59.999999, local time)
+      Example: date_from="2025-08-23", date_to="2025-08-23" matches the entire day on Aug 23.
 
     Other:
     - uuids: Filter to specific photo UUIDs
@@ -247,8 +253,8 @@ def photos_search(
         person_uuids: Photos-specific person UUIDs
         uuids: Specific photo UUIDs to retrieve
         place: Location name (fuzzy matched)
-        date_from: Start date (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
-        date_to: End date (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
+        date_from: Start date (ISO format). Date-only→start-of-day local time.
+        date_to: End date (ISO format). Date-only→end-of-day local time.
         labels: ML scene/object labels that must all be present
         albums: Album names to search within
         keywords: User-assigned keywords
@@ -303,7 +309,7 @@ def photos_search(
 
     try:
         start = _parse_date(date_from)
-        end = _parse_date(date_to)
+        end = _parse_date(date_to, is_end=True)
     except ValueError as e:
         return {"error": str(e), "photos": [], "total_found": 0}
 
@@ -697,7 +703,7 @@ def view_photos(
     - User: "Show me photos from my vacation"
       → photos_search(albums=["Vacation"], limit=10) → view_photos(uuids=[...])
     - User: "Let me see photos with Sarah from last month"
-      → search_person(name="Sarah") → photos_search(person={"id": "..."}, date_from="2024-11-01") → view_photos(uuids=[...])
+      → photos_search(person={"name": "Sarah"}, date_from="2024-11-01") → view_photos(uuids=[...])
     - User: "Display my most recent photos"
       → photos_search(date_from="2024-12-01", limit=5) → view_photos(uuids=[...])
 
